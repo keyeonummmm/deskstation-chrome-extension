@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "DeskStation Extension",
+  "version": "1.0",
+  "description": "Access DeskStation from your browser",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://your-backend-url.com/*"
+  ],
+  "action": {
+    "default_popup": "/extension_entry/index.html",
+    "default_icon": {
+      "16": "/extension_entry/src/icon16.png",
+      "48": "/extension_entry/src/icon48.png",
+      "128": "/extension_entry/src/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "/extension_entry/src/icon16.png",
+    "48": "/extension_entry/src/icon48.png",
+    "128": "/extension_entry/src/icon128.png"
+  }
+}

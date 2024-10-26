@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeskStation Extension</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="computer">
+        <div class="screen">
+            <div id="login-screen" class="active">
+                <h2>DeskStation Login</h2>
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <button id="login-btn">Login</button>
+                <button id="register-btn">Register</button>
+                <p id="screen-message" class="message"></p>
+            </div>
+            <div id="logged-in-screen" class="hidden">
+                <h2>Welcome, <span id="user-name"></span>!</h2>
+                <button id="open-app-btn">Open DeskStation</button>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </div>
+        <div id="keyboard" class="keyboard"></div>
+        <div class="separator"></div>
+    </div>
+    <script src="index.js"></script>
+</body>
+</html>

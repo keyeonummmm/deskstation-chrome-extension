@@ -1,0 +1,11 @@
+{
+  "name": "web_app",
+  "version": "1.0.0",
+  "description": "DeskStation Web App",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Add build script if needed'"
+  },
+  "author": "",
+  "license": "ISC"
+}
