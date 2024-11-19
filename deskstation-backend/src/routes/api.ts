@@ -2,8 +2,11 @@ import express, { Request, Response } from 'express';
 import * as userController from '../controllers/userController';
 import * as fileController from '../controllers/fileController';
 import auth from '../middleware/auth';
+import validateExtensionAuth from '../middleware/validateExtensionAuth';
 
 const apiRouter = express.Router();
+
+apiRouter.use(validateExtensionAuth as express.RequestHandler);
 
 // User routes
 const userRouter = express.Router();
@@ -33,5 +36,6 @@ fileRouter.get('/count-notes', (req: Request, res: Response) => fileController.c
 // Attach routers to main API router
 apiRouter.use('/user', userRouter);
 apiRouter.use('/file', fileRouter);
+
 
 export default apiRouter;

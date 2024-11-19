@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import logger from './utils/logger';
 import { xssProtection, sqlInjectionProtection, rateLimit } from './utils/security';
-
+import validateExtensionAuth from './middleware/validateExtensionAuth';
 dotenv.config();
 
 const app = express();
@@ -36,6 +36,10 @@ app.use(cors({
     credentials: true,
     optionsSuccessStatus: 200
 }));
+
+app.get('/', validateExtensionAuth as express.RequestHandler, (req, res) => {
+    res.sendFile(path.join(__dirname, '..', '..', 'web_app/public/index.html'));
+});
 
 app.use('/api', rateLimit, apiRouters);
 

@@ -60,7 +60,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleOpenApp() {
-        chrome.tabs.create({ url: 'http://localhost:3000/static.html' });
+        const authToken = localStorage.getItem('authToken');
+        chrome.tabs.create({ 
+            url: `http://localhost:3000?extensionAuth=${authToken}`
+        });
     }
 
     function handleLogout() {
@@ -90,6 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const screenMessage = document.getElementById('screen-message');
 
         registerBtn.addEventListener('click', handleRegister);
+        registerPasswordInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                handleRegister();
+            }
+        });
         backBtn.addEventListener('click', showLoginPage);
 
         keyboard.textContent = "Ready to sign up!";
@@ -119,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.user) {
                     screenMessage.textContent = `Registration successful! Welcome, ${data.user.username}. Yay! You're all signed up. Please remember your username and password!`;
-                    keyboard.textContent = "Registration complete!";
+                    showRegisterSuccess();
                 } else {
                     throw new Error(data.message || 'Unknown error');
                 }
@@ -130,6 +138,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 keyboard.textContent = "Registration failed. Please try again.";
             });
         }
+    }
+
+    function checkRegisterSuccess(data) {
+        if (data && data.user) {
+            showRegisterSuccess();
+            return true;
+        }
+        return false;
+    }
+
+    function showRegisterSuccess() {
+        keyboard.textContent = "Registration complete!";
+        mainContent.innerHTML = `
+            <div id="register-success-screen" class="active">
+                <h2>Registration Successful!</h2>
+                <p>Your account has been created successfully.</p>
+                <p>Please proceed to login with your credentials.</p>
+                <button id="goto-login-btn">Back to Login</button>
+            </div>
+        `;
+
+        const gotoLoginBtn = document.getElementById('goto-login-btn');
+        gotoLoginBtn.addEventListener('click', showLoginPage);
     }
 
     function showLoginPage() {
@@ -153,6 +184,11 @@ document.addEventListener('DOMContentLoaded', function() {
         registerLink = document.getElementById('register-link');
 
         loginBtn.addEventListener('click', handleLogin);
+        passwordInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                handleLogin();
+            }
+        });
         registerLink.addEventListener('click', showRegisterPage);
     }
 

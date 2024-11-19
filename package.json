@@ -5,6 +5,7 @@
     "build": "npm run build:webapp && npm run build:extension",
     "start:webapp": "cd web_app && npm start",
     "start:extension": "cd extension_entry && npm start",
-    "install:all": "npm install && cd web_app && npm install && cd ../extension_entry && npm install"
+    "install:all": "npm install && cd web_app && npm install && cd ../extension_entry && npm install",
+    "start:server": "cd deskstation-backend && pnpm dev"
   }
 }
