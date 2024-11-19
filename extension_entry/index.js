@@ -23,10 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
         screenMessage.textContent = isError ? "Oops! Something went wrong. Let's try again!" : "Great job! Keep going!";
     }
 
-    function handleLogin() {
+    function handleLogin(rememberMe = false) {
         const username = usernameInput.value;
         const password = passwordInput.value;
     
+        if (!username || !password) {
+            showMessage('Please enter both username and password', true);
+            return;
+        }
+
         fetch('http://localhost:3000/api/user/login', {
             method: 'POST',
             headers: {
@@ -46,11 +51,20 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.token && data.extensionAuth && data.sessionId) {
+                // Handle remember me
+                if (rememberMe) {
+                    saveCredentials(username, password);
+                } else {
+                    clearSavedCredentials();
+                }
+
+                // Store auth data
                 localStorage.setItem('authToken', data.token);
                 localStorage.setItem('extensionAuth', data.extensionAuth);
                 localStorage.setItem('username', username);
                 localStorage.setItem('sessionId', data.sessionId);
                 localStorage.setItem('loginTime', Date.now().toString());
+                
                 showLoggedInScreen(username);
                 showMessage('Login successful!');
             } else {
@@ -83,7 +97,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function handleLogout() {
+    function handleLogout(clearRemembered = false) {
+        if (clearRemembered) {
+            clearSavedCredentials();
+        }
+        
         localStorage.removeItem('authToken');
         localStorage.removeItem('extensionAuth');
         localStorage.removeItem('username');
@@ -190,6 +208,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h2>DeskStation Login</h2>
                 <input type="text" id="username" placeholder="Username">
                 <input type="password" id="password" placeholder="Password">
+                <div class="remember-me">
+                    <input type="checkbox" id="remember-me">
+                    <label for="remember-me">Remember Me</label>
+                </div>
                 <button id="login-btn">Login</button>
                 <a href="#" id="register-link">Register</a>
                 <p id="error-message" class="error"></p>
@@ -202,11 +224,20 @@ document.addEventListener('DOMContentLoaded', function() {
         passwordInput = document.getElementById('password');
         errorMessage = document.getElementById('error-message');
         registerLink = document.getElementById('register-link');
+        const rememberMeCheckbox = document.getElementById('remember-me');
 
-        loginBtn.addEventListener('click', handleLogin);
+        // Check for saved credentials
+        const savedCredentials = getSavedCredentials();
+        if (savedCredentials) {
+            usernameInput.value = savedCredentials.username;
+            passwordInput.value = savedCredentials.password;
+            rememberMeCheckbox.checked = true;
+        }
+
+        loginBtn.addEventListener('click', () => handleLogin(rememberMeCheckbox.checked));
         passwordInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
-                handleLogin();
+                handleLogin(rememberMeCheckbox.checked);
             }
         });
         registerLink.addEventListener('click', showRegisterPage);
@@ -291,4 +322,35 @@ if (authToken && savedUsername) {
         });
 } else {
     showLoginPage();
+}
+
+// Add these new functions for handling credentials
+function getSavedCredentials() {
+    const encryptedCredentials = localStorage.getItem('rememberedCredentials');
+    if (!encryptedCredentials) return null;
+    
+    try {
+        // Simple encryption/decryption using base64
+        const decrypted = atob(encryptedCredentials);
+        const credentials = JSON.parse(decrypted);
+        return credentials;
+    } catch (error) {
+        console.error('Error retrieving saved credentials:', error);
+        return null;
+    }
+}
+
+function saveCredentials(username, password) {
+    try {
+        // Simple encryption/decryption using base64
+        const credentials = JSON.stringify({ username, password });
+        const encrypted = btoa(credentials);
+        localStorage.setItem('rememberedCredentials', encrypted);
+    } catch (error) {
+        console.error('Error saving credentials:', error);
+    }
+}
+
+function clearSavedCredentials() {
+    localStorage.removeItem('rememberedCredentials');
 }
