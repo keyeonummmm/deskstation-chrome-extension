@@ -78,10 +78,43 @@ async function login(req: Request, res: Response) {
         const hashedPassword = crypto.pbkdf2Sync(sanitizedPassword, salt, 1000, 64, 'sha512').toString('hex');
         const isMatch = storedHash === hashedPassword;
         if (isMatch) {
-            const token = jwt.sign({ user: { username: user.username, userId: user.userId } }, process.env.JWT_SECRET as string, { expiresIn: '24h' });
+            // Generate a unique session ID
+            const sessionId = crypto.randomBytes(16).toString('hex');
+            
+            // Generate regular auth token
+            const token = jwt.sign(
+                { user: { username: user.username, userId: user.userId } }, 
+                process.env.JWT_SECRET as string, 
+                { expiresIn: '24h' }
+            );
+
+            // Generate extension auth token with unique session data
+            const extensionAuth = jwt.sign({
+                user: { 
+                    username: user.username, 
+                    userId: user.userId 
+                },
+                sessionId,
+                isExtension: true,
+                createdAt: Date.now(),
+                userAgent: req.headers['user-agent'] || 'unknown'
+            }, 
+            process.env.JWT_SECRET as string, 
+            { expiresIn: '24h' });
+
             monitorOperation('login', user.userId);
-            logger.log('User logged in', { userId: user.userId, username: sanitizedUsername });
-            res.status(200).json({ message: 'Login successful', token });
+            logger.log('User logged in', { 
+                userId: user.userId, 
+                username: sanitizedUsername,
+                sessionId
+            });
+
+            res.status(200).json({ 
+                message: 'Login successful', 
+                token,
+                extensionAuth,
+                sessionId
+            });
         } else {
             logger.log('Failed login attempt', { username: sanitizedUsername });
             res.status(401).json({ message: 'Invalid username or password' });
@@ -94,7 +127,6 @@ async function login(req: Request, res: Response) {
         res.status(500).json({ message: 'An error occurred during login' });
     }
 }
-
 async function getIntiForOneUser(req: Request, res: Response) {
     try {
         const sanitizedUsername = sanitizeInput(req.body.username);
