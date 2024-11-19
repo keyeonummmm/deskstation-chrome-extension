@@ -26,11 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleLogin() {
         const username = usernameInput.value;
         const password = passwordInput.value;
-
+    
         fetch('http://localhost:3000/api/user/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'User-Agent': navigator.userAgent
             },
             body: JSON.stringify({ username, password })
         })
@@ -44,13 +45,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            if (data.token) {
+            if (data.token && data.extensionAuth && data.sessionId) {
                 localStorage.setItem('authToken', data.token);
+                localStorage.setItem('extensionAuth', data.extensionAuth);
                 localStorage.setItem('username', username);
+                localStorage.setItem('sessionId', data.sessionId);
+                localStorage.setItem('loginTime', Date.now().toString());
                 showLoggedInScreen(username);
                 showMessage('Login successful!');
             } else {
-                showMessage('Login failed: ' + data.message, true);
+                showMessage('Login failed: Missing required authentication data', true);
             }
         })
         .catch(error => {
@@ -60,15 +64,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleOpenApp() {
-        const authToken = localStorage.getItem('authToken');
-        chrome.tabs.create({ 
-            url: `http://localhost:3000?extensionAuth=${authToken}`
-        });
+        const extensionAuth = localStorage.getItem('extensionAuth');
+        const sessionId = localStorage.getItem('sessionId');
+        
+        if (!extensionAuth || !sessionId) {
+            showMessage('Please login again to access the application', true);
+            handleLogout();
+            return;
+        }
+        
+        if (extensionAuth && sessionId) {
+            chrome.tabs.create({ 
+                url: `http://localhost:3000?extensionAuth=${extensionAuth}&sessionId=${sessionId}`
+            });
+        } else {
+            showMessage('Authentication error. Please login again.', true);
+            handleLogout();
+        }
     }
-
+    
     function handleLogout() {
         localStorage.removeItem('authToken');
+        localStorage.removeItem('extensionAuth');
         localStorage.removeItem('username');
+        localStorage.removeItem('sessionId');
+        localStorage.removeItem('loginTime');
         clearKeyboardMessage();
         showLoginPage();
     }
@@ -225,3 +245,50 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoginPage();
     }
 });
+
+// ... existing code ...
+
+function showExpiredLoginScreen() {
+    clearKeyboardMessage();
+    mainContent.innerHTML = `
+        <div id="expired-login-screen" class="active">
+            <h2>Session Expired</h2>
+            <p>Your login session has expired.</p>
+            <p>Please login again to continue.</p>
+            <button id="return-login-btn">Return to Login</button>
+        </div>
+    `;
+
+    const returnLoginBtn = document.getElementById('return-login-btn');
+    returnLoginBtn.addEventListener('click', () => {
+        handleLogout();
+    });
+}
+
+function verifyToken(token) {
+    return fetch('http://localhost:3000/api/user/info', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.ok)
+    .catch(() => false);
+}
+
+// Replace the final authentication check with:
+const authToken = localStorage.getItem('authToken');
+const savedUsername = localStorage.getItem('username');
+if (authToken && savedUsername) {
+    verifyToken(authToken)
+        .then(isValid => {
+            if (isValid) {
+                showLoggedInScreen(savedUsername);
+            } else {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('username');
+                showExpiredLoginScreen();
+            }
+        });
+} else {
+    showLoginPage();
+}
